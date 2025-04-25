@@ -8,17 +8,20 @@
 
 __global__ void vector_add(float* a, float* b, float* c, int N) {
   int idx = 4 * (blockIdx.x * blockDim.x + threadIdx.x);
-  if (idx + 3 < N) {
-    float4 reg_a = FLOAT4(a[idx]);
-    float4 reg_b = FLOAT4(b[idx]);
-    float4 reg_c;
-    reg_c.x = reg_a.x + reg_b.x;
-    reg_c.y = reg_a.y + reg_b.y;
-    reg_c.z = reg_a.z + reg_b.z;
-    reg_c.w = reg_a.w + reg_b.w;
-    FLOAT4(c[idx]) = reg_c;
+  int stride = 4 * blockDim.x * gridDim.x;
+
+  for (; idx + 3 < N; idx += stride) {
+    float4 a4 = FLOAT4(a[idx]);
+    float4 b4 = FLOAT4(b[idx]);
+    float4 c4;
+    c4.x = a4.x + b4.x;
+    c4.y = a4.y + b4.y;
+    c4.z = a4.z + b4.z;
+    c4.w = a4.w + b4.w;
+    FLOAT4(c[idx]) = c4;
   }
 
+  // optional: scalar tail处理 N 不被4整除的情况
   // 只让一个线程做 tail，避免重复
   if (idx == 0) {
     int tail_start = (N / 4) * 4;
