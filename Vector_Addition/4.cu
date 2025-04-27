@@ -10,21 +10,22 @@ __global__ void vector_add(float* a, float* b, float* c, int N) {
   int idx = 4 * (blockIdx.x * blockDim.x + threadIdx.x);
   int stride = 4 * blockDim.x * gridDim.x;
 
-  for (; idx + 3 < N; idx += stride) {
-    float4 a4 = FLOAT4(a[idx]);
-    float4 b4 = FLOAT4(b[idx]);
+  for (int i = idx; i + 3 < N; i += stride) {
+    float4 a4 = FLOAT4(a[i]);
+    float4 b4 = FLOAT4(b[i]);
     float4 c4;
     c4.x = a4.x + b4.x;
     c4.y = a4.y + b4.y;
     c4.z = a4.z + b4.z;
     c4.w = a4.w + b4.w;
-    FLOAT4(c[idx]) = c4;
+    FLOAT4(c[i]) = c4;
   }
 
   // optional: scalar tail处理 N 不被4整除的情况
   // 只让一个线程做 tail，避免重复
   if (idx == 0) {
     int tail_start = (N / 4) * 4;
+#pragma unroll
     for (int i = tail_start; i < N; ++i) {
       c[i] = a[i] + b[i];
     }
